@@ -23,19 +23,21 @@ Unit Tests requirements (SvtJpegxsUnitTests):
 Supported OS versions:
 
  - Linux Ubuntu 20.04 and 22.04
- - Windows 10 and Windows 11
+ - Windows XP and later
 
 ## Build and Install
 
 ### Windows* Operating Systems (64-bit)
 
 - __Build Requirements__
-  - Visual Studio* 2022 or 2019 (older version were not tested)
+  - Visual Studio* 2017, 2022 or 2019 (older version were not tested)
   - CMake 3.16 or later
   - YASM Assembler version 1.2.0 or later
     - Download the yasm executable from the following [link](https://yasm.tortall.net/Download.html)
     - Rename `yasm-*-win64.exe` to `yasm.exe`
     - Copy `yasm.exe` into a location that is in the `PATH` environment variable (for example: `%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\`)
+  - If you want to build target Windows XP, you need Visual Studio 2017 or the individual component on Visual Studio latest.
+    - Target Windows XP after CMake command of source folder: `-G "Visual Studio 2017 Win64" -T v141_xp`.
 
 - __Build Instructions__
   - Build the project by following the steps below
