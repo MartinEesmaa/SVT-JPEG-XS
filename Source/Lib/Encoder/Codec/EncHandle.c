@@ -24,16 +24,16 @@ static void svt_enc_handle_dctor(void_ptr p) {
     svt_jpeg_xs_encoder_common_t* enc_common = &enc_api_prv->enc_common;
 
     // Init Stage
-    SVT_DESTROY_THREAD(enc_api_prv->init_stage_thread_handle);
+    JPEGXS_SVT_DESTROY_THREAD(enc_api_prv->init_stage_thread_handle);
 
     if (enc_common->cpu_profile == CPU_PROFILE_CPU) {
         // dwt Stage
-        SVT_DESTROY_THREAD_ARRAY(enc_api_prv->dwt_stage_thread_handle_array, enc_api_prv->dwt_stage_threads_num);
+        JPEGXS_SVT_DESTROY_THREAD_ARRAY(enc_api_prv->dwt_stage_thread_handle_array, enc_api_prv->dwt_stage_threads_num);
     }
     // pack Stage
-    SVT_DESTROY_THREAD_ARRAY(enc_api_prv->pack_stage_thread_handle_array, enc_api_prv->pack_stage_threads_num);
+    JPEGXS_SVT_DESTROY_THREAD_ARRAY(enc_api_prv->pack_stage_thread_handle_array, enc_api_prv->pack_stage_threads_num);
     // final Stage
-    SVT_DESTROY_THREAD(enc_api_prv->final_stage_thread_handle);
+    JPEGXS_SVT_DESTROY_THREAD(enc_api_prv->final_stage_thread_handle);
 
     SVT_DELETE(enc_api_prv->picture_control_set_pool_ptr);
     SVT_DELETE(enc_api_prv->input_image_resource_ptr);
@@ -49,7 +49,7 @@ static void svt_enc_handle_dctor(void_ptr p) {
 
     SVT_DELETE_PTR_ARRAY(enc_api_prv->pack_stage_context_ptr_array, enc_api_prv->pack_stage_threads_num);
     SVT_FREE(enc_api_prv->sync_output_ringbuffer);
-    svt_free_cond_var(&enc_api_prv->sync_output_ringbuffer_left);
+    jpegxs_svt_free_cond_var(&enc_api_prv->sync_output_ringbuffer_left);
 }
 
 /**********************************
@@ -698,12 +698,12 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
 
     enc_api_prv->sync_output_ringbuffer = NULL;
     SVT_CALLOC_ARRAY(enc_api_prv->sync_output_ringbuffer, enc_api_prv->sync_output_ringbuffer_size);
-    return_error = svt_create_cond_var(&enc_api_prv->sync_output_ringbuffer_left);
+    return_error = jpegxs_svt_create_cond_var(&enc_api_prv->sync_output_ringbuffer_left);
     if (return_error) {
         svt_jpeg_xs_encoder_close(enc_api);
         return return_error;
     }
-    svt_set_cond_var(&enc_api_prv->sync_output_ringbuffer_left, enc_api_prv->sync_output_ringbuffer_size);
+    jpegxs_svt_set_cond_var(&enc_api_prv->sync_output_ringbuffer_left, enc_api_prv->sync_output_ringbuffer_size);
 
     if (enc_api->verbose >= VERBOSE_SYSTEM_INFO) {
         SVT_LOG(
@@ -793,7 +793,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
     enc_api_prv->frame_number = 0;
 
     SVT_NEW(enc_api_prv->picture_control_set_pool_ptr,
-            svt_system_resource_ctor,
+            jpegxs_svt_system_resource_ctor,
             picture_control_set_pool_count,
             1,
             0,
@@ -807,7 +807,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
 
     // EncoderInputImageItem Input
     SVT_NEW(enc_api_prv->input_image_resource_ptr,
-            svt_system_resource_ctor,
+            jpegxs_svt_system_resource_ctor,
             input_buffer_fifo_count,
             1,
             1,
@@ -815,11 +815,11 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
             enc_common,
             input_item_destroyer);
 
-    enc_api_prv->input_image_producer_fifo_ptr = svt_system_resource_get_producer_fifo(enc_api_prv->input_image_resource_ptr, 0);
-    enc_api_prv->input_image_consumer_fifo_ptr = svt_system_resource_get_consumer_fifo(enc_api_prv->input_image_resource_ptr, 0);
+    enc_api_prv->input_image_producer_fifo_ptr = jpegxs_svt_system_resource_get_producer_fifo(enc_api_prv->input_image_resource_ptr, 0);
+    enc_api_prv->input_image_consumer_fifo_ptr = jpegxs_svt_system_resource_get_consumer_fifo(enc_api_prv->input_image_resource_ptr, 0);
 
     SVT_NEW(enc_api_prv->output_queue_resource_ptr,
-            svt_system_resource_ctor,
+            jpegxs_svt_system_resource_ctor,
             output_buffer_fifo_count,
             1,
             1,
@@ -827,9 +827,9 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
             enc_common,
             output_item_destroyer);
 
-    enc_api_prv->output_queue_producer_fifo_ptr = svt_system_resource_get_producer_fifo(enc_api_prv->output_queue_resource_ptr,
+    enc_api_prv->output_queue_producer_fifo_ptr = jpegxs_svt_system_resource_get_producer_fifo(enc_api_prv->output_queue_resource_ptr,
                                                                                         0);
-    enc_api_prv->output_queue_consumer_fifo_ptr = svt_system_resource_get_consumer_fifo(enc_api_prv->output_queue_resource_ptr,
+    enc_api_prv->output_queue_consumer_fifo_ptr = jpegxs_svt_system_resource_get_consumer_fifo(enc_api_prv->output_queue_resource_ptr,
                                                                                         0);
 
     if (enc_common->cpu_profile == CPU_PROFILE_CPU) {
@@ -837,7 +837,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
         DwtInputInitData dwt_input_init_data;
 
         SVT_NEW(enc_api_prv->dwt_input_resource_ptr,
-                svt_system_resource_ctor,
+                jpegxs_svt_system_resource_ctor,
                 dwt_input_fifo_count,
                 init_stage_process_threads_num,
                 enc_api_prv->dwt_stage_threads_num,
@@ -848,7 +848,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
 
     //INIT -> PACK
     SVT_NEW(enc_api_prv->pack_input_resource_ptr,
-            svt_system_resource_ctor,
+            jpegxs_svt_system_resource_ctor,
             pack_input_fifo_count,
             init_stage_process_threads_num,
             enc_api_prv->pack_stage_threads_num,
@@ -860,7 +860,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
     // PACK -> FINISH THREAD
     PackOutputInitData pack_output_init_data;
     SVT_NEW(enc_api_prv->pack_output_resource_ptr,
-            svt_system_resource_ctor,
+            jpegxs_svt_system_resource_ctor,
             pack_output_fifo_count,
             enc_api_prv->pack_stage_threads_num,
             1,
@@ -892,23 +892,23 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
     SVT_NEW(enc_api_prv->final_stage_context_ptr, final_stage_context_ctor, enc_api_prv);
 
     // Init Stage Kernel
-    SVT_CREATE_THREAD(enc_api_prv->init_stage_thread_handle, init_stage_kernel, enc_api_prv->init_stage_context_ptr);
+    JPEGXS_SVT_CREATE_THREAD(enc_api_prv->init_stage_thread_handle, init_stage_kernel, enc_api_prv->init_stage_context_ptr);
 
     if (enc_common->cpu_profile == CPU_PROFILE_CPU) {
         // Dwt Ver Stage Kernel
-        SVT_CREATE_THREAD_ARRAY(enc_api_prv->dwt_stage_thread_handle_array,
+        JPEGXS_SVT_DESTROY_THREAD_ARRAY(enc_api_prv->dwt_stage_thread_handle_array,
                                 enc_api_prv->dwt_stage_threads_num,
                                 dwt_stage_kernel,
                                 enc_api_prv->dwt_stage_context_ptr_array);
     }
 
     // Pack Stage Kernel
-    SVT_CREATE_THREAD_ARRAY(enc_api_prv->pack_stage_thread_handle_array,
+    JPEGXS_SVT_DESTROY_THREAD_ARRAY(enc_api_prv->pack_stage_thread_handle_array,
                             enc_api_prv->pack_stage_threads_num,
                             pack_stage_kernel,
                             enc_api_prv->pack_stage_context_ptr_array);
     // Final Stage Kernel
-    SVT_CREATE_THREAD(enc_api_prv->final_stage_thread_handle, final_stage_kernel, enc_api_prv->final_stage_context_ptr);
+    JPEGXS_SVT_CREATE_THREAD(enc_api_prv->final_stage_thread_handle, final_stage_kernel, enc_api_prv->final_stage_context_ptr);
 
     svt_print_memory_usage();
     return return_error;
@@ -917,10 +917,10 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
 PREFIX_API void svt_jpeg_xs_encoder_close(svt_jpeg_xs_encoder_api_t* enc_api) {
     if (enc_api && enc_api->private_ptr) {
         svt_jpeg_xs_encoder_api_prv_t* enc_api_prv = (svt_jpeg_xs_encoder_api_prv_t*)enc_api->private_ptr;
-        svt_shutdown_process(enc_api_prv->input_image_resource_ptr);
-        svt_shutdown_process(enc_api_prv->dwt_input_resource_ptr);
-        svt_shutdown_process(enc_api_prv->pack_input_resource_ptr);
-        svt_shutdown_process(enc_api_prv->pack_output_resource_ptr);
+        jpegxs_svt_shutdown_process(enc_api_prv->input_image_resource_ptr);
+        jpegxs_svt_shutdown_process(enc_api_prv->dwt_input_resource_ptr);
+        jpegxs_svt_shutdown_process(enc_api_prv->pack_input_resource_ptr);
+        jpegxs_svt_shutdown_process(enc_api_prv->pack_output_resource_ptr);
         if (enc_api_prv->enc_common.slice_sizes) {
             SVT_FREE(enc_api_prv->enc_common.slice_sizes);
         }
@@ -960,10 +960,10 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_send_picture(svt_jpeg_xs_encode
 #endif
 
     if (blocking_flag) {
-        svt_get_empty_object(enc_api_prv->input_image_producer_fifo_ptr, &wrapper_ptr);
+        jpegxs_svt_get_empty_object(enc_api_prv->input_image_producer_fifo_ptr, &wrapper_ptr);
     }
     else {
-        svt_get_empty_object_non_blocking(enc_api_prv->input_image_producer_fifo_ptr, &wrapper_ptr);
+        jpegxs_svt_get_empty_object_non_blocking(enc_api_prv->input_image_producer_fifo_ptr, &wrapper_ptr);
     }
 
     if (wrapper_ptr) {
@@ -971,7 +971,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_send_picture(svt_jpeg_xs_encode
         input_item->enc_input = *enc_input; //Copy input structure
         input_item->frame_number = enc_api_prv->frame_number;
         enc_api_prv->frame_number++;
-        svt_post_full_object(wrapper_ptr);
+        jpegxs_svt_post_full_object(wrapper_ptr);
         SVT_DEBUG("%s\n", __func__);
 #ifdef FLAG_DEADLOCK_DETECT
         printf("00[%s:%i] Send frame to encoder: %03li\n", __func__, __LINE__, (size_t)input_item->frame_number);
@@ -994,10 +994,10 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_get_packet(svt_jpeg_xs_encoder_
     ObjectWrapper_t* wrapper_ptr = NULL;
 
     if (blocking_flag) {
-        svt_get_full_object(enc_api_prv->output_queue_consumer_fifo_ptr, &wrapper_ptr);
+        jpegxl_svt_get_full_object(enc_api_prv->output_queue_consumer_fifo_ptr, &wrapper_ptr);
     }
     else {
-        svt_get_full_object_non_blocking(enc_api_prv->output_queue_consumer_fifo_ptr, &wrapper_ptr);
+        jpegxs_svt_get_full_object_non_blocking(enc_api_prv->output_queue_consumer_fifo_ptr, &wrapper_ptr);
     }
 
     if (wrapper_ptr) {
@@ -1011,7 +1011,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_get_packet(svt_jpeg_xs_encoder_
 #ifdef FLAG_DEADLOCK_DETECT
         printf("09[%s:%i] Receive encoded frame  %03li\n", __func__, __LINE__, (size_t)output_item->frame_number);
 #endif
-        svt_release_object(wrapper_ptr);
+        jpegxs_svt_release_object(wrapper_ptr);
     }
     else {
         enc_output->user_prv_ctx_ptr = NULL;

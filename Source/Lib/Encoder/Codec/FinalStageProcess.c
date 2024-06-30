@@ -54,7 +54,7 @@ SvtJxsErrorType_t final_stage_context_ctor(ThreadContext_t *thread_contxt_ptr, s
     thread_contxt_ptr->priv = context_ptr;
     thread_contxt_ptr->dctor = final_stage_context_dctor;
 
-    context_ptr->input_buffer_fifo_ptr = svt_system_resource_get_consumer_fifo(enc_api_prv->pack_output_resource_ptr, 0);
+    context_ptr->input_buffer_fifo_ptr = jpegxs_svt_system_resource_get_consumer_fifo(enc_api_prv->pack_output_resource_ptr, 0);
     context_ptr->enc_api_prv = enc_api_prv;
     return SvtJxsErrorNone;
 }
@@ -105,13 +105,13 @@ void *final_stage_kernel(void *input_ptr) {
 
     for (;;) {
         // Get the Next svt Input Buffer [BLOCKING]
-        SVT_GET_FULL_OBJECT(context_ptr->input_buffer_fifo_ptr, &input_wrapper_ptr);
+        JPEGXS_SVT_GET_FULL_OBJECT(context_ptr->input_buffer_fifo_ptr, &input_wrapper_ptr);
 
         pack_result = (PackOutput *)input_wrapper_ptr->object_ptr;
 
         if (pack_result->pcs_wrapper_ptr == NULL) {
             fprintf(stderr, "FATAL ERROR [%s:%i] Final thread pcs_wrapper_ptr is NULL\n", __func__, __LINE__);
-            svt_release_object(input_wrapper_ptr);
+            jpegxs_svt_release_object(input_wrapper_ptr);
             continue;
         }
 
@@ -151,7 +151,7 @@ void *final_stage_kernel(void *input_ptr) {
                     //Release picture header
                     if (pcs_ring->slice_released_idx == 0) {
                         ObjectWrapper_t *output_item_wrapper_ptr;
-                        svt_get_empty_object(enc_api_prv->output_queue_producer_fifo_ptr, &output_item_wrapper_ptr);
+                        jpegxs_svt_get_empty_object(enc_api_prv->output_queue_producer_fifo_ptr, &output_item_wrapper_ptr);
                         EncoderOutputItem *output_item = (EncoderOutputItem *)output_item_wrapper_ptr->object_ptr;
                         output_item->enc_input = pcs_ring->enc_input; //Copy structure
                         output_item->enc_input.bitstream.used_size = pcs_ring->enc_common->frame_header_length_bytes;
@@ -164,7 +164,7 @@ void *final_stage_kernel(void *input_ptr) {
 #ifdef FLAG_DEADLOCK_DETECT
                         printf("[%s:%i] Return Frame=%llu HEADER\n", __func__, __LINE__, pcs_ring->frame_number);
 #endif
-                        svt_post_full_object(output_item_wrapper_ptr);
+                        jpegxs_svt_post_full_object(output_item_wrapper_ptr);
 
                         if (callback_get) {
                             callback_get(callback_encoder_ctx, callback_get_context);
@@ -172,7 +172,7 @@ void *final_stage_kernel(void *input_ptr) {
                     }
 
                     ObjectWrapper_t *output_item_wrapper_ptr;
-                    svt_get_empty_object(enc_api_prv->output_queue_producer_fifo_ptr, &output_item_wrapper_ptr);
+                    jpegxs_svt_get_empty_object(enc_api_prv->output_queue_producer_fifo_ptr, &output_item_wrapper_ptr);
                     EncoderOutputItem *output_item = (EncoderOutputItem *)output_item_wrapper_ptr->object_ptr;
                     output_item->enc_input = pcs_ring->enc_input; //Copy structure
                     output_item->enc_input.bitstream.buffer += pcs_ring->bitstream_release_offset;
@@ -195,7 +195,7 @@ void *final_stage_kernel(void *input_ptr) {
                            pcs_ring->frame_number,
                            pcs_ring->slice_released_idx);
 #endif
-                    svt_post_full_object(output_item_wrapper_ptr);
+                    jpegxs_svt_post_full_object(output_item_wrapper_ptr);
 
                     if (callback_get) {
                         callback_get(callback_encoder_ctx, callback_get_context);
@@ -210,7 +210,7 @@ void *final_stage_kernel(void *input_ptr) {
                     printf("08[%s:%i] Return full frame: %llu\n", __func__, __LINE__, pcs_ring->frame_number);
 #endif
                     ObjectWrapper_t *output_item_wrapper_ptr;
-                    svt_get_empty_object(enc_api_prv->output_queue_producer_fifo_ptr, &output_item_wrapper_ptr);
+                    jpegxs_svt_get_empty_object(enc_api_prv->output_queue_producer_fifo_ptr, &output_item_wrapper_ptr);
                     EncoderOutputItem *output_item = (EncoderOutputItem *)output_item_wrapper_ptr->object_ptr;
 
                     output_item->enc_input = pcs_ring->enc_input; //Copy structure
@@ -220,14 +220,14 @@ void *final_stage_kernel(void *input_ptr) {
                     output_item->enc_input.bitstream.ready_to_release = 1;
                     output_item->enc_input.image.ready_to_release = 1;
 
-                    svt_post_full_object(output_item_wrapper_ptr);
+                    jpegxs_svt_post_full_object(output_item_wrapper_ptr);
                     if (callback_get) {
                         callback_get(callback_encoder_ctx, callback_get_context);
                     }
                 }
 
                 //Release the pcs wrapper
-                svt_release_object(pcs_ring_wrapper_ptr);
+                jpegxs_svt_release_object(pcs_ring_wrapper_ptr);
                 /* Release the input picture
                 * From this moment input yuv is no longer used and can be release by callback to application.
                 * RELEASE: (pcs_ring->image_buffer);
@@ -238,14 +238,14 @@ void *final_stage_kernel(void *input_ptr) {
 
                 sync_output_ringbuffer[ring_buffer_index % sync_output_ringbuffer_size] = NULL;
                 ring_buffer_index = (ring_buffer_index + 1) % sync_output_ringbuffer_size;
-                svt_add_cond_var(sync_output_ringbuffer_left, 1); //Increment number of elements to use.
+                jpegxs_svt_add_cond_var(sync_output_ringbuffer_left, 1); //Increment number of elements to use.
             }
             else {
                 break;
             }
         }
 
-        svt_release_object(input_wrapper_ptr);
+        jpegxs_svt_release_object(input_wrapper_ptr);
     }
     return NULL;
 }

@@ -61,9 +61,9 @@ void printfTime(const char *fmt, ...) {
 #endif
 
 /****************************************
- * svt_create_thread
+ * jpegxs_svt_create_thread
  ****************************************/
-Handle_t svt_create_thread(void *(*thread_function)(void *), void *thread_context) {
+Handle_t jpegxs_svt_create_thread(void *(*thread_function)(void *), void *thread_context) {
     Handle_t thread_handle = NULL;
 
 #ifdef _WIN32
@@ -139,9 +139,9 @@ Handle_t svt_create_thread(void *(*thread_function)(void *), void *thread_contex
 }
 
 ///****************************************
-// * svt_start_thread
+// * jpegxs_svt_start_thread
 // ****************************************/
-//SvtJxsErrorType_t svt_start_thread(
+//SvtJxsErrorType_t jpegxs_svt_start_thread(
 //    Handle_t thread_handle)
 //{
 //    SvtJxsErrorType_t error_return = SvtJxsErrorNone;
@@ -168,9 +168,9 @@ Handle_t svt_create_thread(void *(*thread_function)(void *), void *thread_contex
 //}
 //
 ///****************************************
-// * svt_stop_thread
+// * jpegxs_svt_stop_thread
 // ****************************************/
-//SvtJxsErrorType_t svt_stop_thread(
+//SvtJxsErrorType_t jpegxs_svt_stop_thread(
 //    Handle_t thread_handle)
 //{
 //    SvtJxsErrorType_t error_return = SvtJxsErrorNone;
@@ -186,9 +186,9 @@ Handle_t svt_create_thread(void *(*thread_function)(void *), void *thread_contex
 //}
 //
 /****************************************
- * svt_destroy_thread
+ * jpegxs_svt_destroy_thread
  ****************************************/
-SvtJxsErrorType_t svt_destroy_thread(Handle_t thread_handle) {
+SvtJxsErrorType_t jpegxs_svt_destroy_thread(Handle_t thread_handle) {
     SvtJxsErrorType_t error_return;
 
 #ifdef _WIN32
@@ -203,9 +203,9 @@ SvtJxsErrorType_t svt_destroy_thread(Handle_t thread_handle) {
 }
 
 /***************************************
- * svt_create_semaphore
+ * jpegxs_svt_create_semaphore
  ***************************************/
-Handle_t svt_create_semaphore(uint32_t initial_count, uint32_t max_count) {
+Handle_t jpegxs_svt_create_semaphore(uint32_t initial_count, uint32_t max_count) {
     Handle_t semaphore_handle;
 
 #if defined(_WIN32)
@@ -230,9 +230,9 @@ Handle_t svt_create_semaphore(uint32_t initial_count, uint32_t max_count) {
 }
 
 /***************************************
- * svt_post_semaphore
+ * jpegxs_svt_post_semaphore
  ***************************************/
-SvtJxsErrorType_t svt_post_semaphore(Handle_t semaphore_handle) {
+SvtJxsErrorType_t jpegxs_svt_post_semaphore(Handle_t semaphore_handle) {
     SvtJxsErrorType_t return_error;
 
 #ifdef _WIN32
@@ -252,9 +252,9 @@ SvtJxsErrorType_t svt_post_semaphore(Handle_t semaphore_handle) {
 }
 
 /***************************************
- * svt_block_on_semaphore
+ * jpegxs_svt_block_on_semaphore
  ***************************************/
-SvtJxsErrorType_t svt_block_on_semaphore(Handle_t semaphore_handle) {
+SvtJxsErrorType_t jpegxs_svt_block_on_semaphore(Handle_t semaphore_handle) {
     SvtJxsErrorType_t return_error;
 
 #ifdef _WIN32
@@ -275,9 +275,9 @@ SvtJxsErrorType_t svt_block_on_semaphore(Handle_t semaphore_handle) {
 }
 
 /***************************************
- * svt_destroy_semaphore
+ * jpegxs_svt_destroy_semaphore
  ***************************************/
-SvtJxsErrorType_t svt_destroy_semaphore(Handle_t semaphore_handle) {
+SvtJxsErrorType_t jpegxs_svt_destroy_semaphore(Handle_t semaphore_handle) {
     SvtJxsErrorType_t return_error;
 
 #ifdef _WIN32
@@ -293,9 +293,9 @@ SvtJxsErrorType_t svt_destroy_semaphore(Handle_t semaphore_handle) {
     return return_error;
 }
 /***************************************
- * svt_create_mutex
+ * jpegxs_svt_create_mutex
  ***************************************/
-Handle_t svt_create_mutex(void) {
+Handle_t jpegxs_svt_create_mutex(void) {
     Handle_t mutex_handle;
 
 #ifdef _WIN32
@@ -317,9 +317,9 @@ Handle_t svt_create_mutex(void) {
 }
 
 /***************************************
- * svt_release_mutex
+ * jpegxs_svt_release_mutex
  ***************************************/
-SvtJxsErrorType_t svt_release_mutex(Handle_t mutex_handle) {
+SvtJxsErrorType_t jpegxs_svt_release_mutex(Handle_t mutex_handle) {
     SvtJxsErrorType_t return_error;
 
 #ifdef _WIN32
@@ -332,9 +332,9 @@ SvtJxsErrorType_t svt_release_mutex(Handle_t mutex_handle) {
 }
 
 /***************************************
- * svt_block_on_mutex
+ * jpegxs_svt_block_on_mutex
  ***************************************/
-SvtJxsErrorType_t svt_block_on_mutex(Handle_t mutex_handle) {
+SvtJxsErrorType_t jpegxs_svt_block_on_mutex(Handle_t mutex_handle) {
     SvtJxsErrorType_t return_error;
 
 #ifdef _WIN32
@@ -347,9 +347,9 @@ SvtJxsErrorType_t svt_block_on_mutex(Handle_t mutex_handle) {
 }
 
 /***************************************
- * svt_destroy_mutex
+ * jpegxs_svt_destroy_mutex
  ***************************************/
-SvtJxsErrorType_t svt_destroy_mutex(Handle_t mutex_handle) {
+SvtJxsErrorType_t jpegxs_svt_destroy_mutex(Handle_t mutex_handle) {
     SvtJxsErrorType_t return_error;
 
 #ifdef _WIN32
@@ -371,7 +371,7 @@ SvtJxsErrorType_t svt_destroy_mutex(Handle_t mutex_handle) {
     a lock(mutex) and enter the sleeping state.
     it could be seen as a combined: wait and release mutex
 */
-SvtJxsErrorType_t svt_create_cond_var(CondVar *cond_var) {
+SvtJxsErrorType_t jpegxs_svt_create_cond_var(CondVar *cond_var) {
     SvtJxsErrorType_t return_error;
     cond_var->val = 0;
 #ifdef _WIN32
@@ -393,7 +393,7 @@ SvtJxsErrorType_t svt_create_cond_var(CondVar *cond_var) {
 /*
     free condition variable
 */
-SvtJxsErrorType_t svt_free_cond_var(CondVar *cond_var) {
+SvtJxsErrorType_t jpegxs_svt_free_cond_var(CondVar *cond_var) {
     SvtJxsErrorType_t return_error;
 #ifdef _WIN32
     DeleteCriticalSection(&cond_var->cs);
@@ -409,7 +409,7 @@ SvtJxsErrorType_t svt_free_cond_var(CondVar *cond_var) {
 /*
     set a  condition variable to the new value
 */
-SvtJxsErrorType_t svt_set_cond_var(CondVar *cond_var, int32_t new_value) {
+SvtJxsErrorType_t jpegxs_svt_set_cond_var(CondVar *cond_var, int32_t new_value) {
     SvtJxsErrorType_t return_error;
 #ifdef _WIN32
     EnterCriticalSection(&cond_var->cs);
@@ -431,7 +431,7 @@ SvtJxsErrorType_t svt_set_cond_var(CondVar *cond_var, int32_t new_value) {
 /*
     add to condition variable to the value
 */
-SvtJxsErrorType_t svt_add_cond_var(CondVar *cond_var, int32_t add_value) {
+SvtJxsErrorType_t jpegxs_svt_add_cond_var(CondVar *cond_var, int32_t add_value) {
     SvtJxsErrorType_t return_error;
 #ifdef _WIN32
     EnterCriticalSection(&cond_var->cs);
@@ -454,7 +454,7 @@ SvtJxsErrorType_t svt_add_cond_var(CondVar *cond_var, int32_t add_value) {
     wait until the cond variable changes to a value
     different than input
 */
-SvtJxsErrorType_t svt_wait_cond_var(CondVar *cond_var, int32_t input) {
+SvtJxsErrorType_t jpegxs_svt_wait_cond_var(CondVar *cond_var, int32_t input) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
 #ifdef _WIN32

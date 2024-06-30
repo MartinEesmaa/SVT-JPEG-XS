@@ -133,9 +133,9 @@ SvtJxsErrorType_t pack_stage_context_ctor(ThreadContext_t* thread_contxt_ptr, sv
     context_ptr->enc_common = enc_common;
     context_ptr->temp_precincts_in_slice = NULL;
 
-    context_ptr->input_buffer_fifo_ptr = svt_system_resource_get_consumer_fifo(enc_api_prv->pack_input_resource_ptr, idx);
+    context_ptr->input_buffer_fifo_ptr = jpegxs_svt_system_resource_get_consumer_fifo(enc_api_prv->pack_input_resource_ptr, idx);
 
-    context_ptr->output_buffer_fifo_ptr = svt_system_resource_get_producer_fifo(enc_api_prv->pack_output_resource_ptr, idx);
+    context_ptr->output_buffer_fifo_ptr = jpegxs_svt_system_resource_get_producer_fifo(enc_api_prv->pack_output_resource_ptr, idx);
 
     if (enc_common->rate_control_mode == RC_CBR_PER_PRECINCT ||
         enc_common->rate_control_mode == RC_CBR_PER_PRECINCT_MOVE_PADDING) {
@@ -572,7 +572,7 @@ void* pack_stage_kernel(void* input_ptr) {
 
     for (;;) {
         // Get the Next svt Input Buffer [BLOCKING]
-        SVT_GET_FULL_OBJECT(context_ptr->input_buffer_fifo_ptr, &input_wrapper_ptr);
+        JPEGXS_SVT_GET_FULL_OBJECT(context_ptr->input_buffer_fifo_ptr, &input_wrapper_ptr);
         PackInput_t* pack_input = (PackInput_t*)input_wrapper_ptr->object_ptr;
         ObjectWrapper_t* pcs_wrapper_ptr = pack_input->pcs_wrapper_ptr;
         pcs_ptr = (PictureControlSet*)pcs_wrapper_ptr->object_ptr;
@@ -726,7 +726,7 @@ void* pack_stage_kernel(void* input_ptr) {
             write_tail(&bitstream);
         }
 
-        svt_get_empty_object(context_ptr->output_buffer_fifo_ptr, &output_wrapper_ptr);
+        jpegxs_svt_get_empty_object(context_ptr->output_buffer_fifo_ptr, &output_wrapper_ptr);
 #ifdef FLAG_DEADLOCK_DETECT
         printf("07[%s:%i] frame: %03li slice: %03d\n", __func__, __LINE__, (size_t)pcs_ptr->frame_number, pack_input->slice_idx);
 #endif
@@ -737,9 +737,9 @@ void* pack_stage_kernel(void* input_ptr) {
 #ifdef FLAG_DEADLOCK_DETECT
         printf("07[%s:%i] frame: %03li slice: %03d\n", __func__, __LINE__, (size_t)pcs_ptr->frame_number, pack_out->slice_idx);
 #endif
-        svt_post_full_object(output_wrapper_ptr);
+        jpegxs_svt_post_full_object(output_wrapper_ptr);
 
-        svt_release_object(input_wrapper_ptr);
+        jpegxs_svt_release_object(input_wrapper_ptr);
     }
     return NULL;
 }

@@ -65,15 +65,15 @@ SvtJxsErrorType_t init_stage_context_ctor(ThreadContext_t *thread_contxt_ptr, sv
     thread_contxt_ptr->dctor = init_stage_context_dctor;
 
     // InitStage works with ParentPCS
-    context_ptr->picture_control_set_fifo_ptr = svt_system_resource_get_producer_fifo(enc_api_prv->picture_control_set_pool_ptr,
+    context_ptr->picture_control_set_fifo_ptr = jpegxs_svt_system_resource_get_producer_fifo(enc_api_prv->picture_control_set_pool_ptr,
                                                                                       0);
 
     if (enc_common->cpu_profile == CPU_PROFILE_CPU) {
-        context_ptr->dwt_stage_input_fifo_ptr = svt_system_resource_get_producer_fifo(enc_api_prv->dwt_input_resource_ptr, 0);
+        context_ptr->dwt_stage_input_fifo_ptr = jpegxs_svt_system_resource_get_producer_fifo(enc_api_prv->dwt_input_resource_ptr, 0);
     }
 
     if (enc_common->cpu_profile == CPU_PROFILE_LOW_LATENCY || enc_common->cpu_profile == CPU_PROFILE_CPU) {
-        context_ptr->pack_input_buffer_fifo_ptr = svt_system_resource_get_producer_fifo(enc_api_prv->pack_input_resource_ptr, 0);
+        context_ptr->pack_input_buffer_fifo_ptr = jpegxs_svt_system_resource_get_producer_fifo(enc_api_prv->pack_input_resource_ptr, 0);
     }
 
     context_ptr->enc_api_prv = enc_api_prv;
@@ -169,14 +169,14 @@ void *init_stage_kernel(void *input_ptr) {
 
     for (;;) {
         // Get the Next svt Input Buffer [BLOCKING]
-        SVT_GET_FULL_OBJECT(enc_api_prv->input_image_consumer_fifo_ptr, &input_wrapper_ptr);
+        JPEGXS_SVT_GET_FULL_OBJECT(enc_api_prv->input_image_consumer_fifo_ptr, &input_wrapper_ptr);
 
         EncoderInputItem *input_item = (EncoderInputItem *)input_wrapper_ptr->object_ptr;
 #ifdef FLAG_DEADLOCK_DETECT
         printf("01[%s:%i] frame: %03li\n", __func__, __LINE__, (size_t)input_item->frame_number);
 #endif
         // Get a New PCS where we will hold the new input_picture
-        svt_get_empty_object(context_ptr->picture_control_set_fifo_ptr, &pcs_wrapper_ptr);
+        jpegxs_svt_get_empty_object(context_ptr->picture_control_set_fifo_ptr, &pcs_wrapper_ptr);
         PictureControlSet *pcs_ptr = (PictureControlSet *)pcs_wrapper_ptr->object_ptr;
         pi_t *pi = &pcs_ptr->enc_common->pi;
         pcs_ptr->slice_cnt = 0;
@@ -205,8 +205,8 @@ void *init_stage_kernel(void *input_ptr) {
         }
 #endif
 
-        svt_wait_cond_var(sync_output_ringbuffer_left, 0); //Wait until will be free place in ring buffer
-        svt_add_cond_var(sync_output_ringbuffer_left, -1); //Decrement number of elements to use.
+        jpegxs_svt_wait_cond_var(sync_output_ringbuffer_left, 0); //Wait until will be free place in ring buffer
+        jpegxs_svt_add_cond_var(sync_output_ringbuffer_left, -1); //Decrement number of elements to use.
 
         SVT_DEBUG("%s, PCS out %lu\n", __func__, input_item->frame_number);
         if (pcs_ptr->enc_common->cpu_profile == CPU_PROFILE_CPU) {
@@ -227,7 +227,7 @@ void *init_stage_kernel(void *input_ptr) {
 
             for (uint32_t i = 0; i < pi->comps_num; i++) {
                 if (pi->components[i].decom_v != 0) { //For CPU Profile and V = 0 ignore DWT thread.
-                    svt_get_empty_object(context_ptr->dwt_stage_input_fifo_ptr, &dwt_input_wrapper_ptr);
+                    jpegxs_svt_get_empty_object(context_ptr->dwt_stage_input_fifo_ptr, &dwt_input_wrapper_ptr);
 
 #ifdef FLAG_DEADLOCK_DETECT
                     printf("01[%s:%i] frame: %03li plane: %03d\n", __func__, __LINE__, (size_t)input_item->frame_number, i);
@@ -237,7 +237,7 @@ void *init_stage_kernel(void *input_ptr) {
                     dwt_input_ptr->component_id = i;
                     dwt_input_ptr->frame_num = input_item->frame_number;
                     dwt_input_ptr->list_slices = list_slices;
-                    svt_post_full_object(dwt_input_wrapper_ptr);
+                    jpegxs_svt_post_full_object(dwt_input_wrapper_ptr);
                 }
             }
         }
@@ -248,7 +248,7 @@ void *init_stage_kernel(void *input_ptr) {
                 pcs_ptr, context_ptr->pack_input_buffer_fifo_ptr, input_item->frame_number, pcs_wrapper_ptr);
         }
 
-        svt_release_object(input_wrapper_ptr);
+        jpegxs_svt_release_object(input_wrapper_ptr);
     }
 
     return NULL;

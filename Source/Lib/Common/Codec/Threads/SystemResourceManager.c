@@ -22,8 +22,8 @@
 
 static void svt_fifo_dctor(void_ptr p) {
     Fifo_t *obj = (Fifo_t *)p;
-    SVT_DESTROY_SEMAPHORE(obj->counting_semaphore);
-    SVT_DESTROY_MUTEX(obj->lockout_mutex);
+    JPEGXS_SVT_DESTROY_SEMAPHORE(obj->counting_semaphore);
+    JPEGXS_SVT_DESTROY_MUTEX(obj->lockout_mutex);
 }
 /**************************************
  * svt_fifo_ctor
@@ -33,7 +33,7 @@ static SvtJxsErrorType_t svt_fifo_ctor(Fifo_t *fifoPtr, uint32_t initial_count, 
                                        MuxingQueue_t *queue_ptr) {
     fifoPtr->dctor = svt_fifo_dctor;
     // Create Counting Semaphore
-    SVT_CREATE_SEMAPHORE(fifoPtr->counting_semaphore, initial_count, max_count);
+    JPEGXS_SVT_CREATE_SEMAPHORE(fifoPtr->counting_semaphore, initial_count, max_count);
     if (fifoPtr->counting_semaphore == NULL) {
         return SvtJxsErrorInsufficientResources;
     }
@@ -97,12 +97,12 @@ static SvtJxsErrorType_t svt_fifo_shutdown(Fifo_t *fifo_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
     // Acquire lockout Mutex
-    svt_block_on_mutex(fifo_ptr->lockout_mutex);
+    jpegxs_svt_block_on_mutex(fifo_ptr->lockout_mutex);
     fifo_ptr->quit_signal = 1;
     // Release Mutex
-    svt_release_mutex(fifo_ptr->lockout_mutex);
+    jpegxs_svt_release_mutex(fifo_ptr->lockout_mutex);
     //Wake up the waiting process if any
-    svt_post_semaphore(fifo_ptr->counting_semaphore);
+    jpegxs_svt_post_semaphore(fifo_ptr->counting_semaphore);
 
     return return_error;
 }
@@ -187,12 +187,12 @@ static SvtJxsErrorType_t svt_circular_buffer_push_front(CircularBuffer_t *buffer
     return return_error;
 }
 
-void svt_muxing_queue_dctor(void_ptr p) {
+void jpegxs_svt_create_thread(void_ptr p) {
     MuxingQueue_t *obj = (MuxingQueue_t *)p;
     SVT_DELETE_PTR_ARRAY(obj->process_fifo_ptr_array, obj->process_total_count);
     SVT_DELETE(obj->object_queue);
     SVT_DELETE(obj->process_queue);
-    SVT_DESTROY_MUTEX(obj->lockout_mutex);
+    JPEGXS_SVT_DESTROY_MUTEX(obj->lockout_mutex);
 }
 
 /**************************************
@@ -203,7 +203,7 @@ static SvtJxsErrorType_t svt_muxing_queue_ctor(MuxingQueue_t *queue_ptr, uint32_
     uint32_t process_index;
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    queue_ptr->dctor = svt_muxing_queue_dctor;
+    queue_ptr->dctor = jpegxs_svt_create_thread;
     queue_ptr->process_total_count = process_total_count;
 
     // Lockout Mutex
@@ -250,16 +250,16 @@ static SvtJxsErrorType_t svt_muxing_queue_assignation(MuxingQueue_t *queue_ptr) 
         svt_circular_buffer_pop_front(queue_ptr->object_queue, (void **)&wrapper_ptr);
 
         // Block on the Process Fifo's Mutex
-        svt_block_on_mutex(process_fifo_ptr->lockout_mutex);
+        jpegxs_svt_block_on_mutex(process_fifo_ptr->lockout_mutex);
 
         // Put the object on the fifo
         svt_fifo_push_back(process_fifo_ptr, wrapper_ptr);
 
         // Release the Process Fifo's Mutex
-        svt_release_mutex(process_fifo_ptr->lockout_mutex);
+        jpegxs_svt_release_mutex(process_fifo_ptr->lockout_mutex);
 
         // Post the semaphore
-        svt_post_semaphore(process_fifo_ptr->counting_semaphore);
+        jpegxs_svt_post_semaphore(process_fifo_ptr->counting_semaphore);
     }
 
     return return_error;
@@ -297,7 +297,7 @@ static Fifo_t *svt_muxing_queue_get_fifo(MuxingQueue_t *queue_ptr, uint32_t inde
 }
 
 /*********************************************************************
- * svt_object_release_enable
+ * jpegxs_svt_object_release_enable
  *   Enables the release_enable member of ObjectWrapper_t.  Used by
  *   certain objects (e.g. SequenceControlSet) to control whether
  *   ObjectWrapper_ts are allowed to be released or not.
@@ -310,20 +310,20 @@ static Fifo_t *svt_muxing_queue_get_fifo(MuxingQueue_t *queue_ptr, uint32_t inde
  *   wrapper_ptr
  *      pointer to the ObjectWrapper_t to be modified.
  *********************************************************************/
-SvtJxsErrorType_t svt_object_release_enable(ObjectWrapper_t *wrapper_ptr) {
+SvtJxsErrorType_t jpegxs_svt_object_release_enable(ObjectWrapper_t *wrapper_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    svt_block_on_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_block_on_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     wrapper_ptr->release_enable = 1;
 
-    svt_release_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_release_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     return return_error;
 }
 
 /*********************************************************************
- * svt_object_release_disable
+ * jpegxs_svt_object_release_disable
  *   Disables the release_enable member of ObjectWrapper_t.  Used by
  *   certain objects (e.g. SequenceControlSet) to control whether
  *   ObjectWrapper_ts are allowed to be released or not.
@@ -336,20 +336,20 @@ SvtJxsErrorType_t svt_object_release_enable(ObjectWrapper_t *wrapper_ptr) {
  *   wrapper_ptr
  *      pointer to the ObjectWrapper_t to be modified.
  *********************************************************************/
-SvtJxsErrorType_t svt_object_release_disable(ObjectWrapper_t *wrapper_ptr) {
+SvtJxsErrorType_t jpegxs_svt_object_release_disable(ObjectWrapper_t *wrapper_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    svt_block_on_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_block_on_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     wrapper_ptr->release_enable = 0;
 
-    svt_release_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_release_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     return return_error;
 }
 
 /*********************************************************************
- * svt_object_inc_live_count
+ * jpegxs_svt_object_inc_live_count
  *   Increments the live_count member of ObjectWrapper_t.  Used by
  *   certain objects (e.g. SequenceControlSet) to count the number of active
  *   pointers of a ObjectWrapper_t in pipeline at any point in time.
@@ -362,17 +362,17 @@ SvtJxsErrorType_t svt_object_release_disable(ObjectWrapper_t *wrapper_ptr) {
  *   wrapper_ptr
  *      pointer to the ObjectWrapper_t to be modified.
  *********************************************************************/
-SvtJxsErrorType_t svt_object_inc_live_count(ObjectWrapper_t *wrapper_ptr, uint32_t increment_number) {
+SvtJxsErrorType_t jpegxs_svt_object_inc_live_count(ObjectWrapper_t *wrapper_ptr, uint32_t increment_number) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    svt_block_on_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_block_on_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     assert_err(wrapper_ptr->live_count != ObjectWrapperReleasedValue,
                "live_count should not be ObjectWrapperReleasedValue when inc");
 
     wrapper_ptr->live_count += increment_number;
 
-    svt_release_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_release_mutex(wrapper_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     return return_error;
 }
@@ -382,7 +382,7 @@ typedef struct DctorAble {
     DctorCall dctor;
 } DctorAble;
 
-void svt_object_wrapper_dctor(void_ptr p) {
+void jpegxs_svt_object_wrapper_dctor(void_ptr p) {
     ObjectWrapper_t *wrapper = (ObjectWrapper_t *)p;
     if (wrapper->object_destroyer) {
         //customized destructor
@@ -400,7 +400,7 @@ static SvtJxsErrorType_t svt_object_wrapper_ctor(ObjectWrapper_t *wrapper, Syste
                                                  void_ptr object_init_data_ptr, DctorCall object_destroyer) {
     SvtJxsErrorType_t ret;
 
-    wrapper->dctor = svt_object_wrapper_dctor;
+    wrapper->dctor = jpegxs_svt_object_wrapper_dctor;
     wrapper->release_enable = 1;
     wrapper->system_resource_ptr = resource;
     wrapper->object_destroyer = object_destroyer;
@@ -418,7 +418,7 @@ static void svt_system_resource_dctor(void_ptr p) {
 }
 
 /*********************************************************************
- * svt_system_resource_ctor
+ * jpegxs_svt_system_resource_ctor
  *   Constructor for SystemResource_t.  Fully constructs all members
  *   of SystemResource_t including the object with the passed
  *   object_ctor function.
@@ -442,7 +442,7 @@ static void svt_system_resource_dctor(void_ptr p) {
  *   object_destroyer
  *     object destroyer, will call dctor if this is null
  *********************************************************************/
-SvtJxsErrorType_t svt_system_resource_ctor(SystemResource_t *resource_ptr, uint32_t object_total_count,
+SvtJxsErrorType_t jpegxs_svt_system_resource_ctor(SystemResource_t *resource_ptr, uint32_t object_total_count,
                                            uint32_t producer_process_total_count, uint32_t consumer_process_total_count,
                                            Creator_t object_creator, void_ptr object_init_data_ptr, DctorCall object_destroyer) {
     uint32_t wrapper_index;
@@ -490,22 +490,22 @@ SvtJxsErrorType_t svt_system_resource_ctor(SystemResource_t *resource_ptr, uint3
     return return_error;
 }
 
-Fifo_t *svt_system_resource_get_producer_fifo(const SystemResource_t *resource_ptr, uint32_t index) {
+Fifo_t *jpegxs_svt_system_resource_get_producer_fifo(const SystemResource_t *resource_ptr, uint32_t index) {
     return svt_muxing_queue_get_fifo(resource_ptr->empty_queue, index);
 }
 
-Fifo_t *svt_system_resource_get_consumer_fifo(const SystemResource_t *resource_ptr, uint32_t index) {
+Fifo_t *jpegxs_svt_system_resource_get_consumer_fifo(const SystemResource_t *resource_ptr, uint32_t index) {
     return svt_muxing_queue_get_fifo(resource_ptr->full_queue, index);
 }
 
-SvtJxsErrorType_t svt_shutdown_process(const SystemResource_t *resource_ptr) {
+SvtJxsErrorType_t jpegxs_svt_shutdown_process(const SystemResource_t *resource_ptr) {
     //not fully constructed
     if (!resource_ptr || !resource_ptr->full_queue)
         return SvtJxsErrorNone;
 
     //notify all consumers we are shutting down
     for (unsigned int i = 0; i < resource_ptr->full_queue->process_total_count; i++) {
-        Fifo_t *fifo_ptr = svt_system_resource_get_consumer_fifo(resource_ptr, i);
+        Fifo_t *fifo_ptr = jpegxs_svt_system_resource_get_consumer_fifo(resource_ptr, i);
         svt_fifo_shutdown(fifo_ptr);
     }
     return SvtJxsErrorNone;
@@ -517,13 +517,13 @@ SvtJxsErrorType_t svt_shutdown_process(const SystemResource_t *resource_ptr) {
 static SvtJxsErrorType_t svt_release_process(Fifo_t *process_fifo_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    svt_block_on_mutex(process_fifo_ptr->queue_ptr->lockout_mutex);
+    jpegxs_svt_block_on_mutex(process_fifo_ptr->queue_ptr->lockout_mutex);
 
     svt_circular_buffer_push_front(process_fifo_ptr->queue_ptr->process_queue, process_fifo_ptr);
 
     svt_muxing_queue_assignation(process_fifo_ptr->queue_ptr);
 
-    svt_release_mutex(process_fifo_ptr->queue_ptr->lockout_mutex);
+    jpegxs_svt_release_mutex(process_fifo_ptr->queue_ptr->lockout_mutex);
 
     return return_error;
 }
@@ -542,14 +542,14 @@ static SvtJxsErrorType_t svt_release_process(Fifo_t *process_fifo_ptr) {
  *   wrapper_ptr
  *      pointer to ObjectWrapper_t to be posted.
  *********************************************************************/
-SvtJxsErrorType_t svt_post_full_object(ObjectWrapper_t *object_ptr) {
+SvtJxsErrorType_t jpegxs_svt_post_full_object(ObjectWrapper_t *object_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    svt_block_on_mutex(object_ptr->system_resource_ptr->full_queue->lockout_mutex);
+    jpegxs_svt_block_on_mutex(object_ptr->system_resource_ptr->full_queue->lockout_mutex);
 
     svt_muxing_queue_object_push_back(object_ptr->system_resource_ptr->full_queue, object_ptr);
 
-    svt_release_mutex(object_ptr->system_resource_ptr->full_queue->lockout_mutex);
+    jpegxs_svt_release_mutex(object_ptr->system_resource_ptr->full_queue->lockout_mutex);
 
     return return_error;
 }
@@ -564,10 +564,10 @@ SvtJxsErrorType_t svt_post_full_object(ObjectWrapper_t *object_ptr) {
  *   object_ptr
  *      pointer to ObjectWrapper_t to be released.
  *********************************************************************/
-SvtJxsErrorType_t svt_release_object(ObjectWrapper_t *object_ptr) {
+SvtJxsErrorType_t jpegxs_svt_release_object(ObjectWrapper_t *object_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    svt_block_on_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_block_on_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     assert_err(object_ptr->live_count != ObjectWrapperReleasedValue,
                "live_count should not be ObjectWrapperReleasedValue when release");
@@ -591,22 +591,22 @@ SvtJxsErrorType_t svt_release_object(ObjectWrapper_t *object_ptr) {
 #endif
     }
 
-    svt_release_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_release_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     return return_error;
 }
 
-SvtJxsErrorType_t svt_release_dual_object(ObjectWrapper_t *object_ptr, ObjectWrapper_t *sec_object_ptr) {
+SvtJxsErrorType_t jpegxs_svt_release_dual_object(ObjectWrapper_t *object_ptr, ObjectWrapper_t *sec_object_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    svt_block_on_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_block_on_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     // Decrement live_count
     object_ptr->live_count = (object_ptr->live_count == 0) ? object_ptr->live_count : object_ptr->live_count - 1;
 
     if ((object_ptr->release_enable == 1) && (object_ptr->live_count == 0)) {
         //release the second object
-        svt_release_object(sec_object_ptr);
+        jpegxs_svt_release_object(sec_object_ptr);
 
         // Set live_count to ObjectWrapperReleasedValue
         object_ptr->live_count = ObjectWrapperReleasedValue;
@@ -626,7 +626,7 @@ SvtJxsErrorType_t svt_release_dual_object(ObjectWrapper_t *object_ptr, ObjectWra
 #endif
     }
 
-    svt_release_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
+    jpegxs_svt_release_mutex(object_ptr->system_resource_ptr->empty_queue->lockout_mutex);
 
     return return_error;
 }
@@ -669,17 +669,17 @@ static uint8_t svt_fifo_peak_front(Fifo_t *fifoPtr) {
  *      Double pointer used to pass the pointer to the empty
  *      ObjectWrapper_t pointer.
  *********************************************************************/
-SvtJxsErrorType_t svt_get_empty_object(Fifo_t *empty_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
+SvtJxsErrorType_t jpegxs_svt_get_empty_object(Fifo_t *empty_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
     // Queue the Fifo requesting the empty fifo
     svt_release_process(empty_fifo_ptr);
 
     // Block on the counting Semaphore until an empty buffer is available
-    svt_block_on_semaphore(empty_fifo_ptr->counting_semaphore);
+    jpegxs_svt_block_on_semaphore(empty_fifo_ptr->counting_semaphore);
 
     // Acquire lockout Mutex
-    svt_block_on_mutex(empty_fifo_ptr->lockout_mutex);
+    jpegxs_svt_block_on_mutex(empty_fifo_ptr->lockout_mutex);
 
     // Get the empty object
     svt_fifo_pop_front(empty_fifo_ptr, wrapper_dbl_ptr);
@@ -703,25 +703,25 @@ SvtJxsErrorType_t svt_get_empty_object(Fifo_t *empty_fifo_ptr, ObjectWrapper_t *
     (*wrapper_dbl_ptr)->release_enable = 1;
 
     // Release Mutex
-    svt_release_mutex(empty_fifo_ptr->lockout_mutex);
+    jpegxs_svt_release_mutex(empty_fifo_ptr->lockout_mutex);
 
     return return_error;
 }
 
-SvtJxsErrorType_t svt_get_empty_object_non_blocking(Fifo_t *empty_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
+SvtJxsErrorType_t jpegxs_svt_get_empty_object_non_blocking(Fifo_t *empty_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
     // Queue the Fifo requesting the empty fifo
     svt_release_process(empty_fifo_ptr);
 
     // Acquire lockout Mutex
-    svt_block_on_mutex(empty_fifo_ptr->lockout_mutex);
+    jpegxs_svt_block_on_mutex(empty_fifo_ptr->lockout_mutex);
 
     uint8_t empty_flag = svt_fifo_peak_front(empty_fifo_ptr);
 
     if (!empty_flag) {
         // Block on the counting Semaphore until an empty buffer is available
-        svt_block_on_semaphore(empty_fifo_ptr->counting_semaphore);
+        jpegxs_svt_block_on_semaphore(empty_fifo_ptr->counting_semaphore);
 
         // Get the empty object
         svt_fifo_pop_front(empty_fifo_ptr, wrapper_dbl_ptr);
@@ -749,7 +749,7 @@ SvtJxsErrorType_t svt_get_empty_object_non_blocking(Fifo_t *empty_fifo_ptr, Obje
     }
 
     // Release Mutex
-    svt_release_mutex(empty_fifo_ptr->lockout_mutex);
+    jpegxs_svt_release_mutex(empty_fifo_ptr->lockout_mutex);
 
     return return_error;
 }
@@ -769,17 +769,17 @@ SvtJxsErrorType_t svt_get_empty_object_non_blocking(Fifo_t *empty_fifo_ptr, Obje
  *      Double pointer used to pass the pointer to the full
  *      ObjectWrapper_t pointer.
  *********************************************************************/
-SvtJxsErrorType_t svt_get_full_object(Fifo_t *full_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
+SvtJxsErrorType_t jpegxl_svt_get_full_object(Fifo_t *full_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
     // Queue the Fifo requesting the full fifo
     svt_release_process(full_fifo_ptr);
 
     // Block on the counting Semaphore until an empty buffer is available
-    svt_block_on_semaphore(full_fifo_ptr->counting_semaphore);
+    jpegxs_svt_block_on_semaphore(full_fifo_ptr->counting_semaphore);
 
     // Acquire lockout Mutex
-    svt_block_on_mutex(full_fifo_ptr->lockout_mutex);
+    jpegxs_svt_block_on_mutex(full_fifo_ptr->lockout_mutex);
 
     if (!full_fifo_ptr->quit_signal) {
         svt_fifo_pop_front(full_fifo_ptr, wrapper_dbl_ptr);
@@ -790,19 +790,19 @@ SvtJxsErrorType_t svt_get_full_object(Fifo_t *full_fifo_ptr, ObjectWrapper_t **w
     }
 
     // Release Mutex
-    svt_release_mutex(full_fifo_ptr->lockout_mutex);
+    jpegxs_svt_release_mutex(full_fifo_ptr->lockout_mutex);
 
     return return_error;
 }
 
-SvtJxsErrorType_t svt_get_full_object_non_blocking(Fifo_t *full_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
+SvtJxsErrorType_t jpegxs_svt_get_full_object_non_blocking(Fifo_t *full_fifo_ptr, ObjectWrapper_t **wrapper_dbl_ptr) {
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
     uint8_t fifo_empty;
     // Queue the Fifo requesting the full fifo
     svt_release_process(full_fifo_ptr);
 
     // Acquire lockout Mutex
-    svt_block_on_mutex(full_fifo_ptr->lockout_mutex);
+    jpegxs_svt_block_on_mutex(full_fifo_ptr->lockout_mutex);
 
     //if the fifo is shutting down, we will not give any buffer to caller
     if (!full_fifo_ptr->quit_signal)
@@ -811,10 +811,10 @@ SvtJxsErrorType_t svt_get_full_object_non_blocking(Fifo_t *full_fifo_ptr, Object
         fifo_empty = 1;
 
     // Release Mutex
-    svt_release_mutex(full_fifo_ptr->lockout_mutex);
+    jpegxs_svt_release_mutex(full_fifo_ptr->lockout_mutex);
 
     if (!fifo_empty)
-        svt_get_full_object(full_fifo_ptr, wrapper_dbl_ptr);
+        jpegxl_svt_get_full_object(full_fifo_ptr, wrapper_dbl_ptr);
     else
         *wrapper_dbl_ptr = (ObjectWrapper_t *)NULL;
 

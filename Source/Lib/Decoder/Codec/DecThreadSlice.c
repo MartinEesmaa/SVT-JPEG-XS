@@ -43,9 +43,9 @@ SvtJxsErrorType_t universal_thread_context_ctor(ThreadContext_t* thread_context_
     thread_context_ptr->priv = context_ptr;
     thread_context_ptr->dctor = universal_thread_context_dctor;
     context_ptr->dec_api_prv = (svt_jpeg_xs_decoder_api_prv_t*)dec_api_prv;
-    context_ptr->universal_consumer_fifo_ptr = svt_system_resource_get_consumer_fifo(
+    context_ptr->universal_consumer_fifo_ptr = jpegxs_svt_system_resource_get_consumer_fifo(
         context_ptr->dec_api_prv->universal_buffer_resource_ptr, idx);
-    context_ptr->final_producer_fifo_ptr = svt_system_resource_get_producer_fifo(
+    context_ptr->final_producer_fifo_ptr = jpegxs_svt_system_resource_get_producer_fifo(
         context_ptr->dec_api_prv->final_buffer_resource_ptr, idx);
     context_ptr->process_idx = idx;
     context_ptr->dec_thread_context = svt_jpeg_xs_dec_thread_context_alloc(&dec_api_prv->dec_common.pi);
@@ -65,9 +65,9 @@ void* thread_universal_stage_kernel(void* input_ptr) {
     for (;;) {
         ObjectWrapper_t* input_wrapper_ptr;
         if (dec_api_prv->verbose >= VERBOSE_INFO_MULTITHREADING) {
-            fprintf(stderr, "[%s][ThreadId %i] Before SVT_GET_FULL_OBJECT\n", __FUNCTION__, universal_ctx->process_idx);
+            fprintf(stderr, "[%s][ThreadId %i] Before JPEGXS_SVT_GET_FULL_OBJECT\n", __FUNCTION__, universal_ctx->process_idx);
         }
-        SVT_GET_FULL_OBJECT(/*dec_api_prv->universal_consumer_fifo_ptr*/ universal_ctx->universal_consumer_fifo_ptr,
+        JPEGXS_SVT_GET_FULL_OBJECT(/*dec_api_prv->universal_consumer_fifo_ptr*/ universal_ctx->universal_consumer_fifo_ptr,
                             &input_wrapper_ptr);
         TaskCalculateFrame* input_buffer_ptr = (TaskCalculateFrame*)input_wrapper_ptr->object_ptr;
         svt_jpeg_xs_decoder_instance_t* dec_ctx = input_buffer_ptr->wrapper_ptr_decoder_ctx->object_ptr;
@@ -122,7 +122,7 @@ void* thread_universal_stage_kernel(void* input_ptr) {
         }
 
         ObjectWrapper_t* universal_wrapper_ptr;
-        svt_get_empty_object(universal_ctx->final_producer_fifo_ptr, &universal_wrapper_ptr);
+        jpegxs_svt_get_empty_object(universal_ctx->final_producer_fifo_ptr, &universal_wrapper_ptr);
 
         TaskFinalSync* buffer_output = (TaskFinalSync*)universal_wrapper_ptr->object_ptr;
         buffer_output->wrapper_ptr_decoder_ctx = input_buffer_ptr->wrapper_ptr_decoder_ctx;
@@ -137,8 +137,8 @@ void* thread_universal_stage_kernel(void* input_ptr) {
                     (int)dec_ctx->frame_num);
         }
 
-        svt_post_full_object(universal_wrapper_ptr);
-        svt_release_object(input_wrapper_ptr);
+        jpegxs_svt_post_full_object(universal_wrapper_ptr);
+        jpegxs_svt_release_object(input_wrapper_ptr);
     }
 
     return NULL;

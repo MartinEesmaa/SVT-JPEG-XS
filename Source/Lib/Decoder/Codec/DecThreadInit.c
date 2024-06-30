@@ -142,13 +142,13 @@ static void send_slices_tasks(svt_jpeg_xs_decoder_api_prv_t* dec_api_prv, TaskIn
         (dec_ctx->dec_common->picture_header_const.hdr_Cpih == 0);
 
     for (uint32_t slice_idx = 0; slice_idx < pi->slice_num; slice_idx++) {
-        svt_set_cond_var(&dec_ctx->map_slices_decode_done[slice_idx], SYNC_INIT);
+        jpegxs_svt_set_cond_var(&dec_ctx->map_slices_decode_done[slice_idx], SYNC_INIT);
     }
 
     for (uint32_t slice = 0; slice < pi->slice_num; slice++) {
         /*Get Wrapper output*/
         ObjectWrapper_t* universal_wrapper_ptr;
-        svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr, &universal_wrapper_ptr);
+        jpegxs_svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr, &universal_wrapper_ptr);
         TaskCalculateFrame* buffer_output = (TaskCalculateFrame*)universal_wrapper_ptr->object_ptr;
         buffer_output->wrapper_ptr_decoder_ctx = wrapper_ptr_decoder_ctx;
         buffer_output->image_buffer = *image_buffer;
@@ -193,7 +193,7 @@ static void send_slices_tasks(svt_jpeg_xs_decoder_api_prv_t* dec_api_prv, TaskIn
         if (ret) {
             dec_ctx->sync_num_slices_to_receive = slice + 1;
         }
-        svt_post_full_object(universal_wrapper_ptr);
+        jpegxs_svt_post_full_object(universal_wrapper_ptr);
         if (ret) {
             break;
         }
@@ -222,10 +222,10 @@ void* thread_init_stage_kernel(void* input_ptr) {
         ObjectWrapper_t* input_wrapper_ptr;
 
         if (dec_api_prv->verbose >= VERBOSE_INFO_MULTITHREADING) {
-            fprintf(stderr, "[%s] Before SVT_GET_FULL_OBJECT\n", __FUNCTION__);
+            fprintf(stderr, "[%s] Before JPEGXS_SVT_GET_FULL_OBJECT\n", __FUNCTION__);
         }
 
-        SVT_GET_FULL_OBJECT(dec_api_prv->input_consumer_fifo_ptr, &input_wrapper_ptr);
+        JPEGXS_SVT_GET_FULL_OBJECT(dec_api_prv->input_consumer_fifo_ptr, &input_wrapper_ptr);
         TaskInputBitstream* input_buffer_ptr = (TaskInputBitstream*)input_wrapper_ptr->object_ptr;
 
         if (dec_api_prv->verbose >= VERBOSE_INFO_MULTITHREADING) {
@@ -254,15 +254,15 @@ void* thread_init_stage_kernel(void* input_ptr) {
         }
 
         if (dec_api_prv->verbose >= VERBOSE_INFO_MULTITHREADING) {
-            fprintf(stderr, "[%s] Before svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr\n", __FUNCTION__);
+            fprintf(stderr, "[%s] Before jpegxs_svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr\n", __FUNCTION__);
         }
 
         ObjectWrapper_t* wrapper_ptr_decoder_ctx;
 
         if (dec_api_prv->verbose >= VERBOSE_INFO_MULTITHREADING) {
-            fprintf(stderr, "[%s] Before svt_get_empty_object(dec_api_prv->internal_pool_frame_context_fifo_ptr\n", __FUNCTION__);
+            fprintf(stderr, "[%s] Before jpegxs_svt_get_empty_object(dec_api_prv->internal_pool_frame_context_fifo_ptr\n", __FUNCTION__);
         }
-        svt_get_empty_object(dec_api_prv->internal_pool_decoder_instance_fifo_ptr, &wrapper_ptr_decoder_ctx);
+        jpegxs_svt_get_empty_object(dec_api_prv->internal_pool_decoder_instance_fifo_ptr, &wrapper_ptr_decoder_ctx);
 
         if (dec_api_prv->verbose >= VERBOSE_INFO_MULTITHREADING) {
             fprintf(stderr, "[%s] Send frame  %i from Init thread\n", __FUNCTION__, (int)frame_num);
@@ -277,8 +277,8 @@ void* thread_init_stage_kernel(void* input_ptr) {
         dec_ctx->dec_input.bitstream.ready_to_release = 0;
         dec_ctx->dec_input.image.ready_to_release = 0;
 
-        svt_wait_cond_var(sync_output_ringbuffer_left, 0); //Wait until will be free place in ring buffer
-        svt_add_cond_var(sync_output_ringbuffer_left, -1); //Decrement number of elements to use.
+        jpegxs_svt_wait_cond_var(sync_output_ringbuffer_left, 0); //Wait until will be free place in ring buffer
+        jpegxs_svt_add_cond_var(sync_output_ringbuffer_left, -1); //Decrement number of elements to use.
 
         uint32_t header_size = 0;
         SvtJxsErrorType_t ret = SvtJxsErrorNone;
@@ -305,7 +305,7 @@ void* thread_init_stage_kernel(void* input_ptr) {
                 }
             }
             ObjectWrapper_t* universal_wrapper_ptr;
-            svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr, &universal_wrapper_ptr);
+            jpegxs_svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr, &universal_wrapper_ptr);
             TaskCalculateFrame* buffer_output = (TaskCalculateFrame*)universal_wrapper_ptr->object_ptr;
             buffer_output->wrapper_ptr_decoder_ctx = wrapper_ptr_decoder_ctx;
             buffer_output->image_buffer = input_buffer_ptr->dec_input.image;
@@ -313,13 +313,13 @@ void* thread_init_stage_kernel(void* input_ptr) {
             buffer_output->frame_error = ret;
             buffer_output->slice_id = 0;
             dec_ctx->sync_num_slices_to_receive = 1;
-            svt_post_full_object(universal_wrapper_ptr);
+            jpegxs_svt_post_full_object(universal_wrapper_ptr);
         }
         else {
             send_slices_tasks(
                 dec_api_prv, input_buffer_ptr, wrapper_ptr_decoder_ctx, &input_buffer_ptr->dec_input.image, header_size);
         }
-        svt_release_object(input_wrapper_ptr);
+        jpegxs_svt_release_object(input_wrapper_ptr);
         /*Callback available space in Input Queue*/
         if (callback_send) {
             callback_send(callback_decoder_ctx, callback_send_context);
@@ -336,7 +336,7 @@ SvtJxsErrorType_t internal_svt_jpeg_xs_decoder_send_packet(svt_jpeg_xs_decoder_a
 
     //Get and initialize new frame context
     if (wrapper_ptr_decoder_ctx == NULL) {
-        svt_get_empty_object(dec_api_prv->internal_pool_decoder_instance_fifo_ptr, &wrapper_ptr_decoder_ctx);
+        jpegxs_svt_get_empty_object(dec_api_prv->internal_pool_decoder_instance_fifo_ptr, &wrapper_ptr_decoder_ctx);
         slice_scheduler_ctx->wrapper_ptr_decoder_ctx = wrapper_ptr_decoder_ctx;
 
         svt_jpeg_xs_decoder_instance_t* dec_ctx = wrapper_ptr_decoder_ctx->object_ptr;
@@ -359,11 +359,11 @@ SvtJxsErrorType_t internal_svt_jpeg_xs_decoder_send_packet(svt_jpeg_xs_decoder_a
         slice_scheduler_ctx->bytes_processed = 0;
 
         CondVar* sync_output_ringbuffer_left = &dec_api_prv->sync_output_ringbuffer_left;
-        svt_wait_cond_var(sync_output_ringbuffer_left, 0); //Wait until there is a free place in the ring buffer.
-        svt_add_cond_var(sync_output_ringbuffer_left, -1); //Decrement the number of elements to use.
+        jpegxs_svt_wait_cond_var(sync_output_ringbuffer_left, 0); //Wait until there is a free place in the ring buffer.
+        jpegxs_svt_add_cond_var(sync_output_ringbuffer_left, -1); //Decrement the number of elements to use.
 
         for (uint32_t slice_idx = 0; slice_idx < dec_ctx->dec_common->pi.slice_num; slice_idx++) {
-            svt_set_cond_var(&dec_ctx->map_slices_decode_done[slice_idx], SYNC_INIT);
+            jpegxs_svt_set_cond_var(&dec_ctx->map_slices_decode_done[slice_idx], SYNC_INIT);
         }
 
         dec_ctx->sync_num_slices_to_receive = dec_ctx->dec_common->pi.slice_num;
@@ -412,7 +412,7 @@ SvtJxsErrorType_t internal_svt_jpeg_xs_decoder_send_packet(svt_jpeg_xs_decoder_a
         }
 
         ObjectWrapper_t* universal_wrapper_ptr;
-        svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr, &universal_wrapper_ptr);
+        jpegxs_svt_get_empty_object(dec_api_prv->universal_producer_fifo_ptr, &universal_wrapper_ptr);
         TaskCalculateFrame* buffer_output = (TaskCalculateFrame*)universal_wrapper_ptr->object_ptr;
         buffer_output->wrapper_ptr_decoder_ctx = wrapper_ptr_decoder_ctx;
         buffer_output->image_buffer = dec_ctx->dec_input.image;
@@ -426,7 +426,7 @@ SvtJxsErrorType_t internal_svt_jpeg_xs_decoder_send_packet(svt_jpeg_xs_decoder_a
             dec_ctx->sync_num_slices_to_receive = slice_scheduler_ctx->slices_sent + 1;
         }
 
-        svt_post_full_object(universal_wrapper_ptr);
+        jpegxs_svt_post_full_object(universal_wrapper_ptr);
 
         slice_scheduler_ctx->slices_sent++;
         slice_scheduler_ctx->bytes_processed += slice_size;

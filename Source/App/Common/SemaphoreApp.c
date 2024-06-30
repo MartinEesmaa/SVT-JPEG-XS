@@ -117,7 +117,7 @@ SvtJxsErrorType_t semaphore_block(void* semaphore_handle, int32_t timout_ms) {
 }
 
 /****************************************
- * svt_create_thread
+ * jpegxs_svt_create_thread
  ****************************************/
 void* app_create_thread(void* (*thread_function)(void*), void* thread_context) {
     void* thread_handle = NULL;
@@ -150,7 +150,7 @@ void* app_create_thread(void* (*thread_function)(void*), void* thread_context) {
 }
 
 /****************************************
- * svt_destroy_thread
+ * jpegxs_svt_destroy_thread
  ****************************************/
 SvtJxsErrorType_t app_destroy_thread(void* thread_handle) {
     SvtJxsErrorType_t error_return;

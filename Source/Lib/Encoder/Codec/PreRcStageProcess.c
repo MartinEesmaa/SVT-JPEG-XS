@@ -45,7 +45,7 @@ PackInput_t* pre_rc_send_frame_to_pack_slices(PictureControlSet* pcs_ptr, Fifo_t
 
     if (enc_common->cpu_profile == CPU_PROFILE_CPU) {
         //All tasks need pointer no next one in frame. Get first task.
-        svt_get_empty_object(output_buffer_fifo_ptr, &output_wrapper_ptr_next);
+        jpegxs_svt_get_empty_object(output_buffer_fifo_ptr, &output_wrapper_ptr_next);
     }
 
     uint32_t output_bytes_begin = enc_common->frame_header_length_bytes;
@@ -64,7 +64,7 @@ PackInput_t* pre_rc_send_frame_to_pack_slices(PictureControlSet* pcs_ptr, Fifo_t
                 first = pack_input;
             }
             if (i + 1 < enc_common->pi.slice_num) {
-                svt_get_empty_object(output_buffer_fifo_ptr, &output_wrapper_ptr_next);
+                jpegxs_svt_get_empty_object(output_buffer_fifo_ptr, &output_wrapper_ptr_next);
                 pack_input->sync_dwt_list_next = (PackInput_t*)output_wrapper_ptr_next->object_ptr;
             }
             else {
@@ -73,7 +73,7 @@ PackInput_t* pre_rc_send_frame_to_pack_slices(PictureControlSet* pcs_ptr, Fifo_t
             }
         }
         else {
-            svt_get_empty_object(output_buffer_fifo_ptr, &output_wrapper_ptr);
+            jpegxs_svt_get_empty_object(output_buffer_fifo_ptr, &output_wrapper_ptr);
             pack_input = (PackInput_t*)output_wrapper_ptr->object_ptr;
         }
 
@@ -99,7 +99,7 @@ PackInput_t* pre_rc_send_frame_to_pack_slices(PictureControlSet* pcs_ptr, Fifo_t
         printf("04[%s:%i] frame: %03li slice: %03d\n", __func__, __LINE__, (size_t)frame_num, pack_input->slice_idx);
 #endif
         //Send direct to PACK
-        svt_post_full_object(output_wrapper_ptr);
+        jpegxs_svt_post_full_object(output_wrapper_ptr);
     }
     return first;
 }

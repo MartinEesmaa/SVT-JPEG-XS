@@ -11,7 +11,7 @@
 void pack_input_dctor(void_ptr p) {
     PackInput_t* object_ptr = (PackInput_t*)p;
     if (object_ptr->sync_dwt_semaphore) {
-        SVT_DESTROY_SEMAPHORE(object_ptr->sync_dwt_semaphore);
+        JPEGXS_SVT_DESTROY_SEMAPHORE(object_ptr->sync_dwt_semaphore);
     }
 }
 
@@ -21,7 +21,7 @@ SvtJxsErrorType_t pack_input_ctor(PackInput_t* object_ptr, void_ptr object_init_
     object_ptr->dctor = pack_input_dctor;
     svt_jpeg_xs_encoder_common_t* enc_common = object_init_data_ptr;
     if (enc_common->cpu_profile == CPU_PROFILE_CPU) {
-        SVT_CREATE_SEMAPHORE(object_ptr->sync_dwt_semaphore, 0, 1);
+        JPEGXS_SVT_CREATE_SEMAPHORE(object_ptr->sync_dwt_semaphore, 0, 1);
         if (object_ptr->sync_dwt_semaphore == NULL) {
             return SvtJxsErrorInsufficientResources;
         }
