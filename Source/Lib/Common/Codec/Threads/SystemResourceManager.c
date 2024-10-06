@@ -187,7 +187,7 @@ static SvtJxsErrorType_t svt_circular_buffer_push_front(CircularBuffer_t *buffer
     return return_error;
 }
 
-void jpegxs_svt_create_thread(void_ptr p) {
+void jpegxs_svt_muxing_queue_dctor(void_ptr p) {
     MuxingQueue_t *obj = (MuxingQueue_t *)p;
     SVT_DELETE_PTR_ARRAY(obj->process_fifo_ptr_array, obj->process_total_count);
     SVT_DELETE(obj->object_queue);
@@ -203,7 +203,7 @@ static SvtJxsErrorType_t svt_muxing_queue_ctor(MuxingQueue_t *queue_ptr, uint32_
     uint32_t process_index;
     SvtJxsErrorType_t return_error = SvtJxsErrorNone;
 
-    queue_ptr->dctor = jpegxs_svt_create_thread;
+    queue_ptr->dctor = jpegxs_svt_muxing_queue_dctor;
     queue_ptr->process_total_count = process_total_count;
 
     // Lockout Mutex
