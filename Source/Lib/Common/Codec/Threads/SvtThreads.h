@@ -94,7 +94,7 @@ extern SvtJxsErrorType_t jpegxs_svt_destroy_mutex(Handle_t mutex_handle);
         }                                                       \
     } while (0);
 
-#define JPEGXS_SVT_DESTROY_THREAD_ARRAY(pa, count, thread_function, thread_contexts) \
+#define JPEGXS_SVT_CREATE_THREAD_ARRAY(pa, count, thread_function, thread_contexts) \
     do {                                                                     \
         SVT_ALLOC_PTR_ARRAY(pa, count);                                      \
         for (uint32_t i = 0; i < count; i++)                                 \
