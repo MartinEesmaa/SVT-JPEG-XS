@@ -896,14 +896,14 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_encoder_init(uint64_t version_api_major
 
     if (enc_common->cpu_profile == CPU_PROFILE_CPU) {
         // Dwt Ver Stage Kernel
-        JPEGXS_SVT_DESTROY_THREAD_ARRAY(enc_api_prv->dwt_stage_thread_handle_array,
+        JPEGXS_SVT_CREATE_THREAD_ARRAY(enc_api_prv->dwt_stage_thread_handle_array,
                                 enc_api_prv->dwt_stage_threads_num,
                                 dwt_stage_kernel,
                                 enc_api_prv->dwt_stage_context_ptr_array);
     }
 
     // Pack Stage Kernel
-    JPEGXS_SVT_DESTROY_THREAD_ARRAY(enc_api_prv->pack_stage_thread_handle_array,
+    JPEGXS_SVT_CREATE_THREAD_ARRAY(enc_api_prv->pack_stage_thread_handle_array,
                             enc_api_prv->pack_stage_threads_num,
                             pack_stage_kernel,
                             enc_api_prv->pack_stage_context_ptr_array);
