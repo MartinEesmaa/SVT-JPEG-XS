@@ -309,7 +309,7 @@ PREFIX_API SvtJxsErrorType_t svt_jpeg_xs_decoder_init(uint64_t version_api_major
         JPEGXS_SVT_CREATE_THREAD(dec_api_prv->input_stage_thread_handle, thread_init_stage_kernel, dec_api_prv);
     }
 
-    JPEGXS_SVT_DESTROY_THREAD_ARRAY(dec_api_prv->universal_stage_thread_handle_array,
+    JPEGXS_SVT_CREATE_THREAD_ARRAY(dec_api_prv->universal_stage_thread_handle_array,
                             dec_api_prv->universal_threads_num,
                             thread_universal_stage_kernel,
                             dec_api_prv->universal_stage_context_ptr_array);
